@@ -1,5 +1,5 @@
 import requests
-import foundryapi
+import logic
 from openpyxl import Workbook
 from openpyxl.styles import Font, Color
 import config
@@ -7,31 +7,35 @@ import random
 import sys
 import pandas as pd
 
-for i in range(1000):
-    num = i*2
-    print(str(num))
-
 print("Beginning A/B Testing...")
 print("Gathering test data...")
-testgroup = foundryapi.obtain_testgroup(config.testgroup)
+testgroup = logic.obtain_testgroup(config.testgroup)
 testoutlets = []
 for i in testgroup[1]:
     if i not in testoutlets:
         testoutlets.append(i[0])
+outlets = []
+results = []
+for i in range(len(testgroup[1])):
+    outlets.append(testgroup[1][i][0])
+    results.append(testgroup[1][i][1])
+testresults = dict(zip(outlets, results))
 print("Test data obtained!")
 print("Gathering population data...")
-populationgroup = foundryapi.obtain_population(config.population)
+populationgroup = logic.obtain_population(config.population)
+print("Population data obtained!")
+print("Cleaning population...")
 outlets = []
 results = []
 for i in range(len(populationgroup[1])):
     outlets.append(populationgroup[1][i][0])
     results.append(populationgroup[1][i][1])
-results = dict(zip(outlets, results))
+sampleresults = dict(zip(outlets, results))
 popoutlets = []
 for i in populationgroup[1]:
     if i not in popoutlets:
         popoutlets.append(i[0])
-print("Population data obtained!")
+print("Population cleaned!")
 print("Comparing population with test data...")
 print("\n ------------------------ \n")
 #Remove the sample outlets from the population:
@@ -44,22 +48,23 @@ print("After removing sample outlets from population data: " + str(len(popoutlet
 print("\n ------------------------ \n")
 print("Beginning Random Sampling of Population")
 
-samplesgroups = foundryapi.random_numbers(popoutlets, len(popoutlets), len(testoutlets))
+samplesgroups = logic.random_numbers(popoutlets, len(popoutlets), len(testoutlets))
 testgroup = [testoutlets]
 
 print("\n ------------------------ \n")
 #Begin attrition testing
 print("Compiling Test Results")
-#testattritiondata = foundryapi.attritionmodeling(populationgroup, testgroup)
-testattritiondata = foundryapi.attritionmodelingdict(results, testgroup)
+#testattritiondata = logic.attritionmodeling(populationgroup, testgroup)
+testattritiondata = logic.attritionmodelingdict(testresults, testgroup)
 print("Test results compiled")
 print("Compiling Sample Results")
-sampleattritiondata = foundryapi.attritionmodelingdict(results, samplesgroups)
+sampleattritiondata = logic.attritionmodelingdict(sampleresults, samplesgroups)
+#sampleattritiondata = logic.attritionmodeling(populationgroup, samplesgroups)
 print("Sample results compiled")
 print("\n ------------------------ \n")
 
-testkeys = foundryapi.dictkeylist(testattritiondata)
-samplekeys = foundryapi.dictkeylist(sampleattritiondata)
+testkeys = logic.dictkeylist(testattritiondata)
+samplekeys = logic.dictkeylist(sampleattritiondata)
 allkeys = testkeys + samplekeys
 cleankeys = []
 for key in allkeys:
@@ -69,24 +74,7 @@ cleankeys.sort()
 
 print("Loading results into Excel file")
 
-
-wb = Workbook()
-ws = wb.active
-ws.title = "SourceData"
-for y in range(len(cleankeys)):
-    ws.cell(row=1, column=y+1).value = cleankeys[y]
-for x in range(len(testattritiondata[0])):
-    try:
-        ws.cell(row=2, column=x+1).value = testattritiondata[0][int(ws.cell(row=1, column=x+1).value)]
-    except:
-        continue
-for x in range(len(sampleattritiondata)):
-    for y in range(len(sampleattritiondata[x])):
-        try:
-            ws.cell(row=x+3, column=y+1).value = sampleattritiondata[x][int(ws.cell(row=1, column=y+1).value)]
-        except:
-            continue
-wb.save(filename = config.filepath)
+logic.importExcel(cleankeys, testattritiondata, sampleattritiondata)
 
 print("File saved to " + config.filepath + "!")
 print("Exiting A/B Tester")

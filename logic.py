@@ -5,6 +5,8 @@ import datetime
 import collections
 from statistics import mean
 import pandas as pd
+from openpyxl import load_workbook
+from openpyxl import Workbook
 
 token = config.foundrytoken
 
@@ -28,13 +30,26 @@ def query_foundry_sql(query, token, branch='master', base_url='https://one-palan
     columns = [e['name'] for e in json['foundrySchema']['fieldSchemaList']]
     return columns, json['rows']
 
+def devqueryexcel():
+    groupings = []
+    wb = load_workbook(config.excelfile)
+    ws = wb.active
+    maxcol = ws.max_col
+    mincol = ws.min_col
+    maxrow = ws.max_row
+    for x in range(2,maxrow):
+        groupings.append([])
+        for y in range(mincol,maxcol):
+            groupings[x].append(ws.cell(row=x, column=y))
+    return groupings
+    
 def obtain_testgroup(testtable):
-    query = """SELECT outlet_id, ROUND(months_between(a.cancel_date, a.install_date),0) AS result FROM """ + testtable + """ AS a WHERE a.cancel_date IS NOT NULL AND ROUND(months_between(a.cancel_date, a.install_date),0) >= 0 AND a.account_activated LIKE 'Y' AND promotion_type LIKE '%100%'"""
+    query = config.rapid_deposit_attritiontest
     samplegroup = query_foundry_sql(query, token, branch='master', base_url='https://one-palantir.1dc.com/')
     return samplegroup
 
 def obtain_population(populationtable):
-    query = """SELECT outlet_id, ROUND(months_between(a.cancel_date, a.install_date),0) AS result FROM """ + populationtable + """ AS a WHERE a.install_date >= '2020-07-01' AND a.cancel_date IS NOT NULL AND ROUND(months_between(a.cancel_date, a.install_date),0) >= 0 AND a.account_activated LIKE 'Y'""" 
+    query = config.rapid_deposit_attritionsample
     population = query_foundry_sql(query, token, branch='master', base_url='https://one-palantir.1dc.com/')
     return population
 
@@ -43,6 +58,7 @@ def random_numbers(popdata, popsize, samplesize):
     i = 0
     while i < config.numberofsampled: #len(mastersampledata) < config.numberofsampled: 
         if len(mastersampledata[-1]) <= (samplesize - (samplesize * .02)) or len(mastersampledata[-1]) >= (samplesize + (samplesize * .02)):
+            #print("Sample size does not meet criteria. Deleting...")
             del mastersampledata[-1]
             i=i-1
         if i == -1:
@@ -56,8 +72,8 @@ def random_numbers(popdata, popsize, samplesize):
         for j in range(popsize):
             if randlist[j] == randomnumber:
                 mastersampledata[i].append(popdata[j])
-        i+=1
-            
+        #print("Sample obtained. Sample size: " + str(len(mastersampledata[i])))
+        i+=1 
     samplenumber = len(mastersampledata)
     lenlists = []
     for values in mastersampledata:
@@ -86,7 +102,7 @@ def attritionmodelingdict(results, outlets):
     for i in range(len(outlets)):
         attr.append([])
         for j in range(len(outlets[i])):
-            attr[i].append(int(results[outlets[i][j]]))
+            attr[i].append(str(results[outlets[i][j]]))
         result.append(collections.Counter(attr[i]))
     return result
     
@@ -96,5 +112,24 @@ def dictkeylist(dictionarylist):
         for key in dictionary:
             keylist.append(key)
     return keylist
+
+def importExcel(cleankeys, testdata, sampledata):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "SourceData"
+    for y in range(len(cleankeys)):
+        ws.cell(row=1, column=y+1).value = cleankeys[y]
+    for x in range(len(testdata[0])):
+        try:
+            ws.cell(row=2, column=x+1).value = testdata[0][str(ws.cell(row=1, column=x+1).value)]
+        except:
+            continue
+    for x in range(len(sampledata)):
+        for y in range(len(sampledata[x])):
+            try:
+                ws.cell(row=x+3, column=y+1).value = sampledata[x][str(ws.cell(row=1, column=y+1).value)]
+            except:
+                continue
+    wb.save(filename = config.filepath)
     
             
