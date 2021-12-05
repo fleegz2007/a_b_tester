@@ -1,15 +1,23 @@
+from sampler import sampler
 import requests
-import logic
 from openpyxl import Workbook
 from openpyxl.styles import Font, Color
-import config
+from sqlalchemy import create_engine
 import random
 import sys
-import pandas as pd
+
+print(sampler.sample_group)
+print(sampler.population_group)
 
 print("Beginning A/B Testing...")
+
+clean_population = sampler.concat([sampler.sample_group, sampler.population_group]).drop_duplicates(keep=False)
+
+print(clean_population)
+
+holdvar = '''
 print("Gathering test data...")
-testgroup = logic.obtain_testgroup(config.testgroup)
+testgroup = sampler.obtain_testgroup(sampler.testgroup)
 testoutlets = []
 for i in testgroup[1]:
     if i not in testoutlets:
@@ -22,7 +30,7 @@ for i in range(len(testgroup[1])):
 testresults = dict(zip(outlets, results))
 print("Test data obtained!")
 print("Gathering population data...")
-populationgroup = logic.obtain_population(config.population)
+populationgroup = sampler.obtain_population(sampler.population)
 print("Population data obtained!")
 print("Cleaning population...")
 outlets = []
@@ -36,6 +44,7 @@ for i in populationgroup[1]:
     if i not in popoutlets:
         popoutlets.append(i[0])
 print("Population cleaned!")
+'''
 print("Comparing population with test data...")
 print("\n ------------------------ \n")
 #Remove the sample outlets from the population:
@@ -48,23 +57,23 @@ print("After removing sample outlets from population data: " + str(len(popoutlet
 print("\n ------------------------ \n")
 print("Beginning Random Sampling of Population")
 
-samplesgroups = logic.random_numbers(popoutlets, len(popoutlets), len(testoutlets))
+samplesgroups = sampler.random_numbers(popoutlets, len(popoutlets), len(testoutlets))
 testgroup = [testoutlets]
 
 print("\n ------------------------ \n")
 #Begin attrition testing
 print("Compiling Test Results")
-#testattritiondata = logic.attritionmodeling(populationgroup, testgroup)
-testattritiondata = logic.attritionmodelingdict(testresults, testgroup)
+#testattritiondata = sampler.attritionmodeling(populationgroup, testgroup)
+testattritiondata = sampler.attritionmodelingdict(testresults, testgroup)
 print("Test results compiled")
 print("Compiling Sample Results")
-sampleattritiondata = logic.attritionmodelingdict(sampleresults, samplesgroups)
-#sampleattritiondata = logic.attritionmodeling(populationgroup, samplesgroups)
+sampleattritiondata = sampler.attritionmodelingdict(sampleresults, samplesgroups)
+#sampleattritiondata = sampler.attritionmodeling(populationgroup, samplesgroups)
 print("Sample results compiled")
 print("\n ------------------------ \n")
 
-testkeys = logic.dictkeylist(testattritiondata)
-samplekeys = logic.dictkeylist(sampleattritiondata)
+testkeys = sampler.dictkeylist(testattritiondata)
+samplekeys = sampler.dictkeylist(sampleattritiondata)
 allkeys = testkeys + samplekeys
 cleankeys = []
 for key in allkeys:
@@ -74,9 +83,9 @@ cleankeys.sort()
 
 print("Loading results into Excel file")
 
-logic.importExcel(cleankeys, testattritiondata, sampleattritiondata)
+sampler.importExcel(cleankeys, testattritiondata, sampleattritiondata)
 
-print("File saved to " + config.filepath + "!")
+print("File saved to " + sampler.filepath + "!")
 print("Exiting A/B Tester")
 
 

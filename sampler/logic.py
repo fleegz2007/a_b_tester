@@ -1,5 +1,5 @@
+import sampler
 import requests
-import config
 import random
 import datetime
 import collections
@@ -7,8 +7,6 @@ from statistics import mean
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl import Workbook
-
-token = config.foundrytoken
 
 def query_foundry_sql(query, token, branch='master', base_url='https://one-palantir.1dc.com'):
 
@@ -32,7 +30,7 @@ def query_foundry_sql(query, token, branch='master', base_url='https://one-palan
 
 def devqueryexcel():
     groupings = []
-    wb = load_workbook(config.excelfile)
+    wb = load_workbook(sampler.excelfile)
     ws = wb.active
     maxcol = ws.max_col
     mincol = ws.min_col
@@ -44,19 +42,19 @@ def devqueryexcel():
     return groupings
     
 def obtain_testgroup(testtable):
-    query = config.rapid_deposit_attritiontest
-    samplegroup = query_foundry_sql(query, token, branch='master', base_url='https://one-palantir.1dc.com/')
+    query = sampler.rapid_deposit_attritiontest
+    samplegroup = query_foundry_sql(query, sampler.token, branch='master', base_url='https://one-palantir.1dc.com/')
     return samplegroup
 
 def obtain_population(populationtable):
-    query = config.rapid_deposit_attritionsample
-    population = query_foundry_sql(query, token, branch='master', base_url='https://one-palantir.1dc.com/')
+    query = sampler.rapid_deposit_attritionsample
+    population = query_foundry_sql(query, sampler.token, branch='master', base_url='https://one-palantir.1dc.com/')
     return population
 
 def random_numbers(popdata, popsize, samplesize):
     mastersampledata = [[]]
     i = 0
-    while i < config.numberofsampled: #len(mastersampledata) < config.numberofsampled: 
+    while i < sampler.numberofsampled: #len(mastersampledata) < sampler.numberofsampled: 
         if len(mastersampledata[-1]) <= (samplesize - (samplesize * .02)) or len(mastersampledata[-1]) >= (samplesize + (samplesize * .02)):
             #print("Sample size does not meet criteria. Deleting...")
             del mastersampledata[-1]
@@ -130,6 +128,6 @@ def importExcel(cleankeys, testdata, sampledata):
                 ws.cell(row=x+3, column=y+1).value = sampledata[x][str(ws.cell(row=1, column=y+1).value)]
             except:
                 continue
-    wb.save(filename = config.filepath)
+    wb.save(filename = sampler.filepath)
     
             
