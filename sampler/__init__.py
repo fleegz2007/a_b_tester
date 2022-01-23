@@ -1,6 +1,8 @@
-from .logic import *
-from .config import *
-from .model import *
+from sampler.handler import Handler
 
 
+class Sampler(Handler):
+    def __init__(self):
+        super().__init__()
+        self.handler = Handler()
 

@@ -21,9 +21,10 @@ transactions = Table(
 )
 
 #Define queries to gather the test group and population group
-test_group = select([transactions.c.id, transactions.c.debit_amount - transactions.c.credit_amount]).where(and_(transactions.c.acct_id==52, transactions.c.txn_date>='2021-10-01', transactions.c.txn_date>='2021-10-31'))
+test_group = select([transactions.c.id, transactions.c.debit_amount - transactions.c.credit_amount]).where(and_(transactions.c.acct_id==52, transactions.c.txn_date>='2021-10-01'
+                    , transactions.c.txn_date>='2021-10-31')).order_by(transactions.c.id)
 
-population_group = select([transactions.c.id, transactions.c.debit_amount - transactions.c.credit_amount]).where(and_(transactions.c.acct_id==52))
+population_group = select([transactions.c.id, transactions.c.debit_amount - transactions.c.credit_amount]).where(and_(transactions.c.acct_id==52)).order_by(transactions.c.id)
 
 
 sample_group = pd.read_sql(test_group, conn)
