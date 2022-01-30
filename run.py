@@ -8,8 +8,9 @@ import datetime
 meta = MetaData()
 engine = create_engine('postgresql://afliegel:DA0qvgWxn6fNW9oVaHfk@192.168.1.150:5432/agility_prod')
 conn = engine.connect()
-
+print("Conneting")
 tables = engine.table_names()
+print("Connected")
 
 #Define a SQL Alchemy Table off a existing database
 transactions = Table(
@@ -62,7 +63,6 @@ print("\n ------------------------ \n")
 #Begin testing
 print("Compiling Test Results")
 
-##Implement in Class based system for better functionality from this point forward
 
 for i in len(samplesgroups):
     if sampler.analysis_type == 'Average':

@@ -22,15 +22,18 @@ class Statistics(Connector):
         i = 0
         while i < self.details["number_sampled"]: #len(mastersampledata) < sampler.numberofsampled: 
             if len(mastersampledata[-1]) <= (samplesize - (samplesize * .02)) or len(mastersampledata[-1]) >= (samplesize + (samplesize * .02)):
-                #print("Sample size does not meet criteria. Deleting...")
+                print("Sample size does not meet criteria. Deleting...")
                 del mastersampledata[-1]
                 i=i-1
+            else:
+                print("Random Sample Accepted")
             if i == -1:
                 i=0
             mastersampledata.append(popdata)
             mastersampledata[i]['randNumCol'] = np.random.randint(1, 6, mastersampledata[i].shape[0])
             randomnumber = int(round(random.random()*(popsize/samplesize),0))
             mastersampledata[i] = mastersampledata[i][mastersampledata[i]['randNumCol'] == randomnumber]
+            #mastersampledata[i].rename(columns={mastersampledata[i].columns[1]: "id", mastersampledata[i].columns[2]: "data"}, inplace = True)
             i+=1 
         samplenumber = len(mastersampledata)
         lenlists = []
@@ -44,6 +47,13 @@ class Statistics(Connector):
 
     def drop_duplicates(self, popdata, sampledata):
         return pd.concat([sampledata, popdata]).drop_duplicates(keep=False)
+
+
+    def average_aggregation(self, samplegroup, testgroup):
+        averages = []
+        for group in testgroup:
+            pass
+
 
     
 
